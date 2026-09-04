@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <GameBinPath Condition="'$(GameBinPath)' == ''">..\GameBinaries\Bin64</GameBinPath>
+    <HarmonyPath Condition="'$(HarmonyPath)' == ''">..\input\earth\0Harmony.dll</HarmonyPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,35 +34,35 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.4.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Lib.Harmony.2.4.2\lib\net48\0Harmony.dll</HintPath>
+      <HintPath>$(HarmonyPath)</HintPath>
     </Reference>
     <Reference Include="ProtoBuf.Net">
-      <HintPath>GameBinaries\ProtoBuf.Net.dll</HintPath>
+      <HintPath>$(GameBinPath)\ProtoBuf.Net.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="ProtoBuf.Net.Core, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>GameBinaries\ProtoBuf.Net.Core.dll</HintPath>
+      <HintPath>$(GameBinPath)\ProtoBuf.Net.Core.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Common">
-      <HintPath>GameBinaries\Sandbox.Common.dll</HintPath>
+      <HintPath>$(GameBinPath)\Sandbox.Common.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Game">
-      <HintPath>GameBinaries\Sandbox.Game.dll</HintPath>
+      <HintPath>$(GameBinPath)\Sandbox.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Game.XmlSerializers">
-      <HintPath>GameBinaries\Sandbox.Game.XmlSerializers.dll</HintPath>
+      <HintPath>$(GameBinPath)\Sandbox.Game.XmlSerializers.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sandbox.Graphics">
-      <HintPath>GameBinaries\Sandbox.Graphics.dll</HintPath>
+      <HintPath>$(GameBinPath)\Sandbox.Graphics.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="SpaceEngineers.Game">
-      <HintPath>GameBinaries\SpaceEngineers.Game.dll</HintPath>
+      <HintPath>$(GameBinPath)\SpaceEngineers.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -72,37 +74,37 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="VRage">
-      <HintPath>GameBinaries\VRage.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Game">
-      <HintPath>GameBinaries\VRage.Game.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.Game.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Input">
-      <HintPath>GameBinaries\VRage.Input.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.Input.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Library">
-      <HintPath>GameBinaries\VRage.Library.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.Library.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Math">
-      <HintPath>GameBinaries\VRage.Math.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.Math.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="VRage.Render">
-      <HintPath>GameBinaries\VRage.Render.dll</HintPath>
+      <HintPath>$(GameBinPath)\VRage.Render.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Components\LoadingScreenComponent.cs" />
     <Compile Include="Components\ModAPI.cs" />
-    <Compile Include="Components\MyGUIScreenMedicalsPatch.cs" />
     <Compile Include="ServerSwitching\SwitchUtils\EntityUtils.cs" />
     <Compile Include="ServerSwitching\SwitchUtils\MyCharacterCommands.cs" />
-    <Compile Include="ServerSwitching\V1\ServerSwitcherV1.cs" />
+    <Compile Include="ServerSwitching\SectorTransferEngine.cs" />
+    <Compile Include="Core\DestinationRespawnState.cs" />
     <Compile Include="GUI\Screens\GUILoadingScreen.cs" />
     <Compile Include="Messages\OnlinePlayerData.cs" />
     <Compile Include="Utilities\UtilExtensions.cs" />
@@ -114,7 +116,9 @@
     <Compile Include="Components\PlayersWindowComponent.cs" />
     <Compile Include="Seamless.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ServerSwitching\V2\ServerSwitcherV2.cs" />
+    <Compile Include="Core\TransferCoordinator.cs" />
+    <Compile Include="Core\TransferPolicy.cs" />
+    <Compile Include="Core\NormalTransferEngine.cs" />
     <Compile Include="Utilities\AsyncInvoke.cs" />
     <Compile Include="Utilities\MessageUtils.cs" />
     <Compile Include="Utilities\ComponentBase.cs" />

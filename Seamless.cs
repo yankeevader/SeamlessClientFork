@@ -5,6 +5,7 @@ using Sandbox.Game.Localization;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using SeamlessClient.Components;
+using SeamlessClient.Core;
 using SeamlessClient.Messages;
 using SeamlessClient.OnlinePlayersWindow;
 using SeamlessClient.ServerSwitching;
@@ -37,7 +38,6 @@ namespace SeamlessClient
         private bool Initilized = false;
         public static bool isSeamlessServer { get; private set; } = false;
         public static bool isDebug = false;
-        public static bool UseNewVersion = false;
   
 
 
@@ -159,7 +159,20 @@ namespace SeamlessClient
 
         public void Dispose()
         {
-           
+            if (Initilized && MyAPIGateway.Multiplayer != null)
+                MyAPIGateway.Multiplayer.UnregisterSecureMessageHandler(SeamlessClientNetId, MessageHandler);
+
+            foreach (ComponentBase component in allComps)
+            {
+                try { component.Destroy(); }
+                catch (Exception ex) { TryShow(ex, $"Failed to destroy {component.GetType()}"); }
+            }
+
+            SeamlessPatcher?.UnpatchAll("SeamlessClientPatcher");
+            allComps.Clear();
+            Initilized = false;
+            isSeamlessServer = false;
+            TransferCoordinator.Instance.Reset();
         }
 
 
@@ -171,6 +184,7 @@ namespace SeamlessClient
             if (MyAPIGateway.Multiplayer == null)
             {
                 isSeamlessServer = false;
+                TransferCoordinator.Instance.Reset();
                 return;
             }
 
@@ -194,28 +208,16 @@ namespace SeamlessClient
 
         public static void StartSwitch(TransferData targetServer)
         {
-            if (targetServer.TargetServerId == 0)
+            try
             {
-                Seamless.TryShow("This is not a valid server!");
-                return;
+                Seamless.TryShow($"Received Nexus transfer to server {targetServer?.TargetServerId}");
+                TransferCoordinator.Instance.Start(targetServer);
             }
-
-            var server = new MyGameServerItem
+            catch (Exception ex)
             {
-                ConnectionString = targetServer.IpAddress,
-                SteamID = targetServer.TargetServerId,
-                Name = targetServer.ServerName
-            };
-
-
-            Seamless.TryShow($"Beginning Redirect to server: {targetServer.TargetServerId}");
-            var world = targetServer.WorldRequest.DeserializeWorldData();
-
-            //Temp fix till im not lazy enough to fix new version
-            if (UseNewVersion)
-                ServerSwitcherV2.Instance.StartBackendSwitch(server, world);
-            else
-                ServerSwitcherV1.Instance.StartBackendSwitch(server, world);
+                TryShow(ex, "Transfer dispatch failed");
+                TransferCoordinator.Instance.Reset();
+            }
         }
 
 

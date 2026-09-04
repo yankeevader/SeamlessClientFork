@@ -19,6 +19,9 @@ namespace SeamlessClient.OnlinePlayersWindow
         public static List<OnlineClientServer> allServers = new List<OnlineClientServer>();
         public static OnlineClientServer onlineServer;
 
+        public static int CurrentServerId => onlineServer?.ServerID ?? 0;
+        public static string CurrentServerName => onlineServer?.ServerName;
+
 
         public override void Patch(Harmony patcher)
         {
@@ -44,6 +47,10 @@ namespace SeamlessClient.OnlinePlayersWindow
 
 
             allServers.Clear();
+            onlineServer = null;
+
+            if (servers == null)
+                return;
 
             foreach (OnlineClientServer server in servers)
             {

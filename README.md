@@ -1,33 +1,50 @@
-# SeamlessClientPlugin (Re-write)
-The seamless client plugin lets you switch between SE servers without a loading screen. This currently *only* works with Nexus compatible servers as all data is shared and synced between them.
+# SKP Seamless Client 3.1.12 alpha 3
 
-The main load time is the time it takes for your client to ping the destination server, and the client to recieve the go-ahead. Any extra time is contributed to entities syncing to the client similar to if you were respawning at the grid. (sometimes it takes forever). I will be looking into pre-loading synced entities to the client in the near future, but atm this was the easier solution.
+This is a Nexus V3 client-plugin rewrite for mixed server clusters. It retains the proven in-session multiplayer handoff for compatible sector worlds and deliberately uses Space Engineers' normal join pipeline whenever a transfer touches the Lobby.
 
-This has taken countless hours of testing and debugging to get right. Not to mention the countless hours implementing the server plugin Nexus. If you enjoy this kind of work, please donate [here](https://se-nexus.net/en/Contribute) to help keep this project alive.
+## Routing rules
 
+- Source and destination have identical mod cohorts: seamless handoff, regardless of server name.
+- Source and destination mod cohorts differ: normal loading transition.
+- Missing world/mod compatibility data: normal loading transition (fail safe).
+- A second transfer is rejected while one is active.
+- A rejected seamless join, lost destination host, or P2P failure falls back to a normal join of the intended destination.
 
+The current server identity comes from Nexus' `OnlinePlayers` message and is used for logging only. The word `Lobby` does not force a route. A Lobby built inside the compatible sector cohort can therefore switch seamlessly; a separate Lobby with a different mod set uses the normal loader.
 
-## How it works
-With Nexus servers, all data is shared between servers. (Factions, Identities, Players, Econ etc) This is a huge benefit as we dont have to go in and reload all identities and factions etc. The next thing that happens is that the server tells the client to switch to the proper server. It then goes in and just re-applies the MyMultiplayerClient to the target server. Of course there is a few other things that must happen to fix any errors or bugs, but that is the main rundown.
+## Respawn ownership
 
+Respawn state belongs to the destination world. Before a seamless handoff the old medical screen is closed and removed. During destination checkpoint application, `MySpaceRespawnComponent` is initialized from the destination checkpoint and rebound to the player collection. Respawn pods are then supplied by the destination's replicated entities.
 
+The previous plugin's global medical-screen patch was removed. It incorrectly renamed every suit-spawn row to `Nexus Lobby` and could not represent different respawn setups per world.
 
-## How to install
-Simply install the plugin loader, and check this plugin's box to be added to the plugin loaders' active plugin list. (SE will need to be restarted afterwards)
+This means an already-living character follows Nexus' normal identity/body transfer. If the player subsequently dies, the respawn UI and available pods are those belonging to the destination world.
 
+## Nexus V3 compatibility
 
-## Known issues
-Obviously this is not an issue-free system. Currently, since im doing no mod unloading or loading, there could be issues if your servers don't have the same mods, or the mods don't work right. Please do not swarm mod authors with faults if seamless doesn't play nice with it. ***Its not their fault*** its ***mine***. I will be trying to implement mod unloading and loading switching between servers, just no ETA.
+- Network channel remains `2936`.
+- Existing protobuf field numbers and wire models are unchanged.
+- Assembly version is `3.1.12.0`, following the upstream `3.1.9` source and the packaged `3.1.7` client.
+- Normal-load server items inherit the active multiplayer app version and game AppID; leaving the version at zero causes Keen's `Server version: 0` rejection.
+- Nexus/TransferSafety remains authoritative for TransferID, journal, destination verification, source cleanup, identity and grid transfer. This client does not invent or acknowledge a parallel transfer protocol.
 
-## ModAPI
-I attempted to avoid implementing any modAPI in seamless, but unfortunately, Space Engineers doesn't handle unloading and reloading the same mod without compiling easily. Either I compile the mod every time you switch servers, eventually running into memory issues, or I attempt to unload the mod manually and restart it.
-In both scenarios, unloading static variables are often up to the mod author and sometimes are set to null. On mod load, these variables are not re-instantiated with the default values resulting in many issues. It is way easier for mod authors when needed implement seamless unload and load logic appropriately.
+## Build
 
-There are two methods you can add to your mods (In the main mod session component class)
+The project targets .NET Framework 4.8. By default it expects:
 
-private void SeamlessServerLoaded(){}
-private void SeamlessServerUnloaded(){}
+- game assemblies in `../GameBinaries/Bin64`
+- Harmony at `../input/earth/0Harmony.dll`
 
-Unloaded happens when seamless starts switching, Loaded when seamless is done switching. Seamless patches these methods on mod compilation.
+Override MSBuild properties `GameBinPath` and `HarmonyPath` if your layout differs. Build `SeamlessClient.sln` in Release mode. Only `SeamlessClient.dll` is the plugin artifact; game and Harmony dependencies already supplied by Space Engineers/Nexus should not be bundled into a client release.
 
+## Deployment and testing
 
+This is an alpha build. Test on a staging clone before production:
+
+1. Connect to a sector and cross to another sector while alive and controlling a character/grid.
+2. Verify identity, body association, controlled entity, toolbar and shared GPS.
+3. Die after arrival and confirm only the destination world's respawn pods/options appear.
+4. Transfer sector -> Lobby and Lobby -> sector; both must show the normal loading transition and load the destination mod set.
+5. Interrupt or reject a destination connection and confirm the normal-join fallback activates without source cleanup occurring ahead of TransferSafety's VERIFIED state.
+
+Do not install this DLL on dedicated servers as a server plugin. It implements `VRage.Plugins.IPlugin` and runs in the Space Engineers client. Distribution through your Nexus-provided client plugin/mod-list mechanism still requires whatever loader Nexus uses to place and load client plugin DLLs; an ordinary workshop mod cannot load arbitrary client plugin assemblies by itself.
